@@ -8,11 +8,19 @@ import {
   StyleSheet,
   TextInput,
   Button,
+  Modal,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {getTransactionList} from '../services';
+
+const optSort = [
+  {label: 'Nama A-Z', value: 'name_asc'},
+  {label: 'Nama Z-A', value: 'name_desc'},
+  {label: 'Tanggal Terbaru', value: 'date_desc'},
+  {label: 'Tanggal Terlama', value: 'date_asc'},
+];
 
 const RenderItem = ({item}) => {
   const navigation = useNavigation();
@@ -30,7 +38,7 @@ const RenderItem = ({item}) => {
         <Text>{item.beneficiary_name}</Text>
         <Text style={styles.itemInfo}>
           {item?.amount} <Icon name="arrow-forward" size={12} color="#000" />{' '}
-          {item?.completed_at}
+          {item?.created_at}
         </Text>
       </View>
       <View style={styles.itemStatus}>
@@ -46,6 +54,7 @@ const TrxList = ({navigation}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('');
+  const [modalSort, setModalSort] = useState(false);
 
   useEffect(() => {
     try {
@@ -72,11 +81,17 @@ const TrxList = ({navigation}) => {
     }
   }, [search]);
 
+  useEffect(() => {
+    if (sort) {
+    } else {
+      setData(baseData);
+    }
+  }, [sort]);
+
   const handleSearch = () => {
     const searchText = search.toLowerCase();
 
     const filteredData = baseData.filter(item => {
-      console.log({searchText, am: item.amount});
       return (
         item?.beneficiary_name?.toLowerCase().includes(searchText) ||
         item?.sender_bank?.toLowerCase().includes(searchText) ||
@@ -91,9 +106,57 @@ const TrxList = ({navigation}) => {
     setSearch(text);
   };
 
-  // const handleSort = () => {
+  const handleSort = (sortValue: string) => {
+    let sortedData = [...baseData];
+    if (sortValue === 'name_asc') {
+      sortedData = baseData.sort((a, b) => {
+        if (a.beneficiary_name < b.beneficiary_name) {
+          return -1;
+        }
+        if (a.beneficiary_name > b.beneficiary_name) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+    if (sortValue === 'name_desc') {
+      sortedData = baseData.sort((a, b) => {
+        if (a.beneficiary_name > b.beneficiary_name) {
+          return -1;
+        }
+        if (a.beneficiary_name < b.beneficiary_name) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+    if (sortValue === 'date_desc') {
+      sortedData = baseData.sort((a, b) => {
+        if (a.created_at > b.created_at) {
+          return -1;
+        }
+        if (a.created_at < b.created_at) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+    if (sortValue === 'date_asc') {
+      sortedData = baseData.sort((a, b) => {
+        if (a.created_at < b.created_at) {
+          return -1;
+        }
+        if (a.created_at > b.created_at) {
+          return 1;
+        }
+        return 0;
+      });
+    }
 
-  // }
+    setData(sortedData);
+    setSort(sortValue);
+    setModalSort(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -104,13 +167,39 @@ const TrxList = ({navigation}) => {
           onChangeText={value => handleChangeSearch(value)}
           placeholder="Cari nama, bank, atau nominal"
         />
-        <Button title="URUTKAN" />
+        <Button onPress={() => setModalSort(true)} title="URUTKAN" />
       </View>
       <FlatList
         style={styles.listContainer}
         data={data}
         renderItem={props => <RenderItem {...props} />}
       />
+      <Modal
+        transparent={true}
+        visible={modalSort}
+        onRequestClose={() => setModalSort(false)}>
+        <View style={styles.modalCenter}>
+          <View style={styles.modalContent}>
+            {optSort.map((item, i) => (
+              <TouchableOpacity
+                style={styles.modalItem}
+                onPress={() => handleSort(item.value)}
+                key={i}>
+                <Icon
+                  name={
+                    item.value === sort
+                      ? 'radio-button-checked'
+                      : 'radio-button-unchecked'
+                  }
+                  size={14}
+                  color="#000"
+                />
+                <Text>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -146,6 +235,35 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   itemInfo: {},
+  modalContainer: {
+    backgroundColor: 'red',
+  },
+  modalCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#rgba(0, 0, 0, 0.8)',
+  },
+  modalContent: {
+    margin: 16,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '80%',
+  },
+  modalItem: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+  },
 });
 
 export default TrxList;
