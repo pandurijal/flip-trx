@@ -7,7 +7,7 @@ export const formatIDR = (amount: number) => {
 };
 
 export const formatDate = (date: string) => {
-  const dateArr = date.split(' ')[0];
+  const dateArr = date?.split(' ')[0];
   return new Date(dateArr).toLocaleDateString('id-ID', {
     year: 'numeric',
     month: 'long',

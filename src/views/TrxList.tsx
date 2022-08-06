@@ -26,14 +26,14 @@ const optSort = {
 
 const RenderItem = ({item}) => {
   const navigation = useNavigation();
-  const status = useTrxStatus(item.status);
+  const status = useTrxStatus(item?.status);
   return (
     <TouchableOpacity
       style={[
         styles.itemContainer,
-        {borderLeftColor: item.status === 'SUCCESS' ? '#58b486' : '#f26947'},
+        {borderLeftColor: item?.status === 'SUCCESS' ? '#58b486' : '#f26947'},
       ]}
-      key={item.key}
+      key={item?.key}
       onPress={() => navigation.navigate('Transaction Detail', item)}>
       <View style={styles.itemData}>
         <Text style={styles.itemBank}>
@@ -41,10 +41,9 @@ const RenderItem = ({item}) => {
           <Icon name="arrow-forward" size={12} color="#000" />{' '}
           {item?.beneficiary_bank}
         </Text>
-        <Text>{item.beneficiary_name}</Text>
+        <Text>{item?.beneficiary_name}</Text>
         <Text style={styles.itemInfo}>
-          {formatIDR(item?.amount)}{' '}
-          <Icon name="arrow-forward" size={12} color="#000" />{' '}
+          {formatIDR(item?.amount)} <Icon name="circle" size={8} color="#000" />{' '}
           {formatDate(item?.created_at)}
         </Text>
       </View>
@@ -64,19 +63,24 @@ const TrxList = ({navigation}) => {
   const [modalSort, setModalSort] = useState(false);
 
   useEffect(() => {
-    try {
-      setIsLoading(true);
-      const res = getTransactionList();
-      if (res) {
-        const arrData = Object.keys(res).map(key => res[key]);
-        setBaseData(arrData);
-        setData(arrData);
+    const getTransactions = async () => {
+      try {
+        setIsLoading(true);
+        const res = await getTransactionList();
+        console.log({res});
+        if (res) {
+          const arrData = Object.keys(res).map(key => res[key]);
+          setBaseData(arrData);
+          setData(arrData);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    getTransactions();
   }, []);
 
   useEffect(() => {
@@ -139,10 +143,10 @@ const TrxList = ({navigation}) => {
     if (sortValue === 'date_desc') {
       sortedData = baseData.sort((a, b) => {
         if (a.created_at > b.created_at) {
-          return -1;
+          return 1;
         }
         if (a.created_at < b.created_at) {
-          return 1;
+          return -1;
         }
         return 0;
       });
@@ -150,10 +154,10 @@ const TrxList = ({navigation}) => {
     if (sortValue === 'date_asc') {
       sortedData = baseData.sort((a, b) => {
         if (a.created_at < b.created_at) {
-          return -1;
+          return 1;
         }
         if (a.created_at > b.created_at) {
-          return 1;
+          return -1;
         }
         return 0;
       });
