@@ -1,9 +1,18 @@
 import React from 'react';
-import {Text, SafeAreaView, StyleSheet, View} from 'react-native';
+import {
+  Text,
+  SafeAreaView,
+  StyleSheet,
+  View,
+  Touchable,
+  TouchableOpacity,
+} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const TrxDetail = ({route}) => {
   const data = route.params;
+  const navigation = useNavigation();
   console.log({data});
   return (
     <SafeAreaView style={styles.container}>
@@ -13,7 +22,9 @@ const TrxDetail = ({route}) => {
         </View>
         <View style={styles.detailSection}>
           <Text style={styles.detailTitle}>DETAIL TRANSAKSI</Text>
-          <Text style={styles.detailClose}>Tutup</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.detailClose}>Tutup</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.detailSection}>
           <View>
