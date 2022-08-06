@@ -7,27 +7,33 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  Button,
   Modal,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {getTransactionList} from '../services';
+import {formatDate, formatIDR} from '../utils';
+import {useTrxStatus} from '../hooks';
 
-const optSort = [
-  {label: 'Nama A-Z', value: 'name_asc'},
-  {label: 'Nama Z-A', value: 'name_desc'},
-  {label: 'Tanggal Terbaru', value: 'date_desc'},
-  {label: 'Tanggal Terlama', value: 'date_asc'},
-];
+const optSort = {
+  sort: 'URUTKAN',
+  name_asc: 'Nama A-Z',
+  name_desc: 'Nama Z-A',
+  date_asc: 'Tanggal Terbaru',
+  date_desc: 'Tanggal Terlama',
+};
 
 const RenderItem = ({item}) => {
   const navigation = useNavigation();
+  const status = useTrxStatus(item?.status);
   return (
     <TouchableOpacity
-      style={styles.itemContainer}
-      key={item.key}
+      style={[
+        styles.itemContainer,
+        {borderLeftColor: item?.status === 'SUCCESS' ? '#58b486' : '#f26947'},
+      ]}
+      key={item?.key}
       onPress={() => navigation.navigate('Transaction Detail', item)}>
       <View style={styles.itemData}>
         <Text style={styles.itemBank}>
@@ -35,14 +41,14 @@ const RenderItem = ({item}) => {
           <Icon name="arrow-forward" size={12} color="#000" />{' '}
           {item?.beneficiary_bank}
         </Text>
-        <Text>{item.beneficiary_name}</Text>
+        <Text>{item?.beneficiary_name}</Text>
         <Text style={styles.itemInfo}>
-          {item?.amount} <Icon name="arrow-forward" size={12} color="#000" />{' '}
-          {item?.created_at}
+          {formatIDR(item?.amount)} <Icon name="circle" size={8} color="#000" />{' '}
+          {formatDate(item?.created_at)}
         </Text>
       </View>
-      <View style={styles.itemStatus}>
-        <Text>{item?.status}</Text>
+      <View>
+        <Text style={[styles.itemStatus, status.style]}>{status.label}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -53,24 +59,28 @@ const TrxList = ({navigation}) => {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('');
+  const [sort, setSort] = useState('sort');
   const [modalSort, setModalSort] = useState(false);
 
   useEffect(() => {
-    try {
-      setIsLoading(true);
-      const res = getTransactionList();
-      if (res) {
-        // convert getTransactionList to array
-        const arrData = Object.keys(res).map(key => res[key]);
-        setBaseData(arrData);
-        setData(arrData);
+    const getTransactions = async () => {
+      try {
+        setIsLoading(true);
+        const res = await getTransactionList();
+        console.log({res});
+        if (res) {
+          const arrData = Object.keys(res).map(key => res[key]);
+          setBaseData(arrData);
+          setData(arrData);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    getTransactions();
   }, []);
 
   useEffect(() => {
@@ -133,10 +143,10 @@ const TrxList = ({navigation}) => {
     if (sortValue === 'date_desc') {
       sortedData = baseData.sort((a, b) => {
         if (a.created_at > b.created_at) {
-          return -1;
+          return 1;
         }
         if (a.created_at < b.created_at) {
-          return 1;
+          return -1;
         }
         return 0;
       });
@@ -144,10 +154,10 @@ const TrxList = ({navigation}) => {
     if (sortValue === 'date_asc') {
       sortedData = baseData.sort((a, b) => {
         if (a.created_at < b.created_at) {
-          return -1;
+          return 1;
         }
         if (a.created_at > b.created_at) {
-          return 1;
+          return -1;
         }
         return 0;
       });
@@ -161,13 +171,30 @@ const TrxList = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.toolbarContainer}>
-        <Icon name="search" size={12} color="#000" />
-        <TextInput
-          value={search}
-          onChangeText={value => handleChangeSearch(value)}
-          placeholder="Cari nama, bank, atau nominal"
-        />
-        <Button onPress={() => setModalSort(true)} title="URUTKAN" />
+        <View style={styles.toolbarSearch}>
+          <Icon
+            style={styles.toolbarSearchIcon}
+            name="search"
+            size={20}
+            color="#d0d0d0"
+          />
+          <TextInput
+            value={search}
+            onChangeText={value => handleChangeSearch(value)}
+            placeholder="Cari nama, bank, atau nominal"
+          />
+        </View>
+        <TouchableOpacity
+          style={styles.toolbarSort}
+          onPress={() => setModalSort(true)}>
+          <Text style={styles.toolbarSortText}>{optSort[sort]}</Text>
+          <Icon
+            style={styles.toolbarSortIcon}
+            name="expand-more"
+            size={20}
+            color="#f26947"
+          />
+        </TouchableOpacity>
       </View>
       <FlatList
         style={styles.listContainer}
@@ -180,21 +207,22 @@ const TrxList = ({navigation}) => {
         onRequestClose={() => setModalSort(false)}>
         <View style={styles.modalCenter}>
           <View style={styles.modalContent}>
-            {optSort.map((item, i) => (
+            {Object.keys(optSort).map((key, i) => (
               <TouchableOpacity
                 style={styles.modalItem}
-                onPress={() => handleSort(item.value)}
+                onPress={() => handleSort(key)}
                 key={i}>
                 <Icon
+                  style={styles.modalItemIcon}
                   name={
-                    item.value === sort
+                    key === sort
                       ? 'radio-button-checked'
                       : 'radio-button-unchecked'
                   }
                   size={14}
-                  color="#000"
+                  color="#f26947"
                 />
-                <Text>{item.label}</Text>
+                <Text style={styles.modalItemText}>{optSort[key]}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -212,11 +240,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginHorizontal: 16,
     marginTop: 8,
+    flexDirection: 'row',
+  },
+  toolbarSearch: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  toolbarSearchIcon: {
+    marginVertical: 8,
+    marginHorizontal: 4,
+  },
+  toolbarSort: {
+    marginVertical: 8,
+    flexDirection: 'row',
+  },
+  toolbarSortText: {
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginTop: 2,
+    color: '#f26947',
+  },
+  toolbarSortIcon: {
+    fontWeight: 'bold',
   },
   listContainer: {
     marginVertical: 12,
   },
   itemContainer: {
+    borderLeftWidth: 8,
+    borderRadius: 8,
     backgroundColor: '#fff',
     padding: 16,
     marginHorizontal: 12,
@@ -226,7 +279,13 @@ const styles = StyleSheet.create({
   itemData: {
     flex: 1,
   },
-  itemStatus: {},
+  itemStatus: {
+    borderWidth: 2,
+    padding: 4,
+    borderRadius: 8,
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
   itemBank: {
     textTransform: 'uppercase',
     fontSize: 12,
@@ -263,6 +322,12 @@ const styles = StyleSheet.create({
   modalItem: {
     flexDirection: 'row',
     paddingVertical: 8,
+  },
+  modalItemIcon: {
+    marginRight: 8,
+  },
+  modalItemText: {
+    fontWeight: 'bold',
   },
 });
 
