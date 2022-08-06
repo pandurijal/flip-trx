@@ -4,16 +4,15 @@ import {
   SafeAreaView,
   StyleSheet,
   View,
-  Touchable,
   TouchableOpacity,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {formatDate, formatIDR} from '../utils';
 
 const TrxDetail = ({route}) => {
   const data = route.params;
   const navigation = useNavigation();
-  console.log({data});
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.detailContainer}>
@@ -48,7 +47,9 @@ const TrxDetail = ({route}) => {
 
               <View style={styles.detailDataItem}>
                 <Text style={styles.detailDataLabel}>Nominal</Text>
-                <Text style={styles.detailDataValue}>{data.amount}</Text>
+                <Text style={styles.detailDataValue}>
+                  {formatIDR(data.amount)}
+                </Text>
               </View>
 
               <View style={styles.detailDataItem}>
@@ -63,7 +64,9 @@ const TrxDetail = ({route}) => {
 
               <View style={styles.detailDataItem}>
                 <Text style={styles.detailDataLabel}>Waktu Dibuat</Text>
-                <Text style={styles.detailDataValue}>{data.completed_at}</Text>
+                <Text style={styles.detailDataValue}>
+                  {formatDate(data.completed_at)}
+                </Text>
               </View>
             </View>
           </View>

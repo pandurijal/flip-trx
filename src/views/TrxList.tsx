@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  Button,
   Modal,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {getTransactionList} from '../services';
+import {formatDate, formatIDR} from '../utils';
 
 const optSort = {
   sort: 'URUTKAN',
@@ -60,8 +60,9 @@ const RenderItem = ({item}) => {
         </Text>
         <Text>{item.beneficiary_name}</Text>
         <Text style={styles.itemInfo}>
-          {item?.amount} <Icon name="arrow-forward" size={12} color="#000" />{' '}
-          {item?.created_at}
+          {formatIDR(item?.amount)}{' '}
+          <Icon name="arrow-forward" size={12} color="#000" />{' '}
+          {formatDate(item?.created_at)}
         </Text>
       </View>
       <View>
