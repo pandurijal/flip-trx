@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {getTransactionList} from '../services';
 import {formatDate, formatIDR} from '../utils';
+import {useTrxStatus} from '../hooks';
 
 const optSort = {
   sort: 'URUTKAN',
@@ -23,27 +24,9 @@ const optSort = {
   date_desc: 'Tanggal Terlama',
 };
 
-const optStatus = {
-  SUCCESS: {
-    label: 'Berhasil',
-    style: {
-      color: '#fff',
-      borderColor: '#58b486',
-      backgroundColor: '#58b486',
-    },
-  },
-  PENDING: {
-    label: 'Pengecekan',
-    style: {
-      color: '#000',
-      borderColor: '#f26947',
-      backgroundColor: '#fff',
-    },
-  },
-};
-
 const RenderItem = ({item}) => {
   const navigation = useNavigation();
+  const status = useTrxStatus(item.status);
   return (
     <TouchableOpacity
       style={[
@@ -66,9 +49,7 @@ const RenderItem = ({item}) => {
         </Text>
       </View>
       <View>
-        <Text style={[styles.itemStatus, optStatus[item.status].style]}>
-          {optStatus[item.status].label}
-        </Text>
+        <Text style={[styles.itemStatus, status.style]}>{status.label}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -87,7 +68,6 @@ const TrxList = ({navigation}) => {
       setIsLoading(true);
       const res = getTransactionList();
       if (res) {
-        // convert getTransactionList to array
         const arrData = Object.keys(res).map(key => res[key]);
         setBaseData(arrData);
         setData(arrData);
